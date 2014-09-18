@@ -411,7 +411,7 @@ int BitSharesApp::run()
   fc_tasks.connect(&fc_tasks, &QTimer::timeout, [](){ fc::usleep(fc::microseconds(1000)); });
   fc_tasks.start(33);
 
-  QPixmap pixmap(":/images/splash_screen.jpg");
+  QPixmap pixmap(":/images/keyid-bg.png");
   QSplashScreen splash(pixmap);
   splash.showMessage(QObject::tr("Loading configuration..."),
     Qt::AlignCenter | Qt::AlignBottom, Qt::white);

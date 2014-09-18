@@ -1,8 +1,13 @@
 <RCC>
   <qresource prefix="htdocs">
+    <file>htdocs/admin.html</file>
+    <file>htdocs/angular.js</file>
     <file>htdocs/blank.html</file>
     <file>htdocs/favicon.ico</file>
+    <file>htdocs/index.css</file>
     <file>htdocs/index.html</file>
+    <file>htdocs/index.js</file>
+    <file>htdocs/keyid-bg.png</file>
     <file>htdocs/locale-de.json</file>
     <file>htdocs/locale-en.json</file>
     <file>htdocs/locale-ru.json</file>
