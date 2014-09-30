@@ -46,6 +46,7 @@ find_package(Qt5Gui REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5WebKit REQUIRED)
 find_package(Qt5WebKitWidgets REQUIRED)
+find_package(Qt5LinguistTools REQUIRED)
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} ${Qt5WebKitWidgets_INCLUDE_DIRS} )
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/include" )
@@ -74,6 +75,9 @@ set( SOURCES
   html5viewer/html5viewer.cpp
   images/bitshares.icns
 )
+
+file( GLOB TS_FILES translations/*.ts )
+QT5_ADD_TRANSLATION(QM_FILES ${TS_FILES})
 
 set( CPACK_BUNDLE_NAME ${APP_NAME} )
 set( CPACK_PACKAGE_NAME ${CPACK_BUNDLE_NAME} )
@@ -129,7 +133,7 @@ IF( WIN32 )
 ENDIF( WIN32 )
 
 # Tell CMake to create the qt_wallet executable
-add_executable( ${APP_NAME} WIN32 MACOSX_BUNDLE ${SOURCES} )
+add_executable( ${APP_NAME} WIN32 MACOSX_BUNDLE ${SOURCES} ${QM_FILES} )
 
 IF(NOT CMAKE_GENERATOR STREQUAL "Xcode") # for some reason lineman couldn't be invoked from XCode, so let's skip this in XCode
   IF( IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../web_wallet")
@@ -157,7 +161,28 @@ IF( APPLE )
     target_link_libraries(${APP_NAME} ${APP_SERVICES_LIBRARY})
 ENDIF()
 
-QT5_ADD_RESOURCES( BitSharesQRC  bitshares.qrc )
+# QT's resource compiler requires all input files to be in the same directory as the .qrc file
+# or in a subdirectory below it.  We need to include a generated file (ru_RU.qm) in the resource file,
+# and that file is generated into the build directory, so we must copy the .qrc and any other 
+# non-generated files to the build directory to allow them to be compiled together.
+# Set up custom commands to copy the static files whenever they change
+set(static_bitshares_resource_files bitshares.qrc
+                                    images/splash_screen.jpg
+                                    images/qtapp.ico
+                                    images/tray_icon.png)
+foreach(static_resource_file ${static_bitshares_resource_files})
+  get_filename_component(static_resource_file_path "${static_resource_file}" DIRECTORY)
+  add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${static_resource_file}"
+                     MAIN_DEPENDENCY "${CMAKE_CURRENT_SOURCE_DIR}/${static_resource_file}"
+                     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/${static_resource_file_path}"
+                     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/${static_resource_file}" "${CMAKE_CURRENT_BINARY_DIR}/${static_resource_file_path}")
+  list(APPEND static_bitshares_resource_files_in_binary_directory "${CMAKE_CURRENT_BINARY_DIR}/${static_resource_file}")
+endforeach()  
+
+QT5_ADD_RESOURCES( BitSharesQRC  "${CMAKE_CURRENT_BINARY_DIR}/bitshares.qrc" )
+foreach(static_file IN LISTS static_bitshares_resource_files_in_binary_directory)
+  set_property(SOURCE "${CMAKE_CURRENT_BINARY_DIR}/bitshares.qrc" APPEND PROPERTY OBJECT_DEPENDS ${static_file})
+endforeach()
 QT5_ADD_RESOURCES( HTDOCS  htdocs.qrc )
 
 # Use the Widgets module from Qt 5.

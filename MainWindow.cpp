@@ -317,18 +317,16 @@ void MainWindow::setupTrayIcon()
   connect(_trayIcon, &QSystemTrayIcon::activated, [this](QSystemTrayIcon::ActivationReason reason){
     if( reason == QSystemTrayIcon::Trigger )
     {
-#ifdef __APPLE__
-      ProcessSerialNumber psn = { 0, kCurrentProcess };
-      bool visible = !IsProcessVisible(&psn);
-      ShowHideProcess(&psn, visible);
-
-      if( visible )
-        SetFrontProcess(&psn);
-#else
+#ifndef __APPLE__
       setVisible(!isVisible());
 #endif
     }
   });
+
+  QMenu* trayMenu = new QMenu(this);
+  trayMenu->addAction(tr("Show Window"), this, SLOT(takeFocus()));
+  trayMenu->addAction(tr("Quit"), qApp, SLOT(quit()));
+  _trayIcon->setContextMenu(trayMenu);
 
   connect(qApp, &QApplication::aboutToQuit, [this]{
     _trayIcon->deleteLater();
@@ -674,10 +672,10 @@ void MainWindow::initMenu()
 {
   auto menuBar = new QMenuBar(nullptr);
 
-  _fileMenu = menuBar->addMenu("File");
+  _fileMenu = menuBar->addMenu(tr("File"));
 
-  connect(_fileMenu->addAction("Import Wallet"), &QAction::triggered, this, &MainWindow::importWallet);
-  connect(_fileMenu->addAction("Export Wallet"), &QAction::triggered, [this](){
+  connect(_fileMenu->addAction(tr("Import Wallet")), &QAction::triggered, this, &MainWindow::importWallet);
+  connect(_fileMenu->addAction(tr("Export Wallet")), &QAction::triggered, [this](){
     QString savePath = QFileDialog::getSaveFileName(this,
                                                     tr("Export Wallet"),
                                                     QDir::homePath().append(QStringLiteral("/%1 Wallet Backup.json").arg(qApp->applicationName())),
@@ -694,7 +692,7 @@ void MainWindow::initMenu()
     }
   });
   _fileMenu->actions().last()->setShortcut(QKeySequence(tr("Ctrl+Shift+X")));
-  connect(_fileMenu->addAction("Open URL"), &QAction::triggered, [this]{
+  connect(_fileMenu->addAction(tr("Open URL")), &QAction::triggered, [this]{
     QInputDialog urlGetter(this);
     urlGetter.setWindowTitle(tr("Open URL"));
     urlGetter.setLabelText(tr("Please enter a URL to open"));
@@ -713,7 +711,7 @@ void MainWindow::initMenu()
   _fileMenu->addAction(tr("Remove Updates"), this, SLOT(removeWebUpdates()));
   _fileMenu->addAction(tr("Quit"), qApp, SLOT(quit()), QKeySequence(tr("Ctrl+Q")));
 
-  _accountMenu = menuBar->addMenu("Accounts");
+  _accountMenu = menuBar->addMenu(tr("Accounts"));
   setMenuBar(menuBar);
 }
 
